@@ -399,7 +399,7 @@ class NavigationBackControls extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
               onPressed: () async {
-                if (await controllerGlobal!.canGoBack()) {
+                if (controllerGlobal != null && await controllerGlobal!.canGoBack()) {
                   controllerGlobal!.goBack();
                 } else {
                   // Scaffold.of(context).showSnackBar(
@@ -431,7 +431,7 @@ class NavigationControls extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
               onPressed: () async {
-                if (await controllerGlobal!.canGoForward()) {
+                if (controllerGlobal != null && await controllerGlobal!.canGoForward()) {
                   controllerGlobal!.goForward();
                 } else {
                   // Scaffold.of(context).showSnackBar(

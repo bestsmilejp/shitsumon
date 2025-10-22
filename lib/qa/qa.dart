@@ -1,10 +1,6 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:shitsumon/UI/labels.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-// import 'package:flutter_webview_pro/webview_flutter.dart';
 import '../app.dart';
 
 class QAScreen extends StatefulWidget {
@@ -17,7 +13,6 @@ class QAScreen extends StatefulWidget {
 class _QAScreenState extends State<QAScreen> {
 
   bool isLoading = false;
-  late final WebViewController controllerGlobal;
 
   Widget icon = Container(
     margin: EdgeInsets.symmetric(horizontal: 1.0),
@@ -25,8 +20,6 @@ class _QAScreenState extends State<QAScreen> {
     height: 4.0,
     width: 4.0,
   );
-
-  final Completer<WebViewController> _controller = Completer<WebViewController>();
 
   @override
   void dispose() {
@@ -73,7 +66,9 @@ class _QAScreenState extends State<QAScreen> {
                 flex: 1,
                 child: Container(
                   padding: EdgeInsets.all(5.0),
-                  child: WebViewWidget(controller: controllerGlobal),
+                  child: controllerGlobal != null
+                    ? WebViewWidget(controller: controllerGlobal!)
+                    : Center(child: CircularProgressIndicator()),
                 ),
               ),
             ],
@@ -103,7 +98,7 @@ class _QAScreenState extends State<QAScreen> {
   }
 
   Future<bool> onBackPress() async{
-    if (await controllerGlobal!.canGoBack()) {
+    if (controllerGlobal != null && await controllerGlobal!.canGoBack()) {
       controllerGlobal!.goBack();
     }
     return Future.value(false);

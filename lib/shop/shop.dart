@@ -1,11 +1,6 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:shitsumon/UI/labels.dart';
 import 'package:flutter/material.dart';
-import 'package:shitsumon/UI/size_config.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-// import 'package:flutter_webview_pro/webview_flutter.dart';
 import '../app.dart';
 
 class ShopScreen extends StatefulWidget {
@@ -18,7 +13,6 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
 
   bool isLoading = false;
-  late final WebViewController controllerGlobal;
 
   Widget icon = Container(
     margin: EdgeInsets.symmetric(horizontal: 1.0),
@@ -26,8 +20,6 @@ class _ShopScreenState extends State<ShopScreen> {
     height: 4.0,
     width: 4.0,
   );
-
-  final Completer<WebViewController> _controller = Completer<WebViewController>();
 
   @override
   void dispose() {
@@ -65,7 +57,13 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   Widget build(BuildContext context) {
     print("Strings.shop_url: ${Strings.shop_url}");
-    return WillPopScope(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) async {
+        if (!didPop) {
+          await onBackPress();
+        }
+      },
       child: Stack(
         children: <Widget>[
           Column(
@@ -74,7 +72,9 @@ class _ShopScreenState extends State<ShopScreen> {
                 flex: 1,
                 child: Container(
                   padding: EdgeInsets.all(5.0),
-                  child: WebViewWidget(controller: controllerGlobal),
+                  child: controllerGlobal != null
+                    ? WebViewWidget(controller: controllerGlobal!)
+                    : Center(child: CircularProgressIndicator()),
                 ),
               ),
             ],
@@ -84,7 +84,6 @@ class _ShopScreenState extends State<ShopScreen> {
           buildLoading()
         ],
       ),
-      onWillPop: onBackPress,
     );
   }
 
@@ -104,7 +103,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Future<bool> onBackPress() async{
-    if (await controllerGlobal!.canGoBack()) {
+    if (controllerGlobal != null && await controllerGlobal!.canGoBack()) {
       controllerGlobal!.goBack();
     }
     return Future.value(false);
