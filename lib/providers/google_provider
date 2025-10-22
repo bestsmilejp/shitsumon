@@ -1,0 +1,298 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_sign_in/google_sign_in.dart'
+    show GoogleSignIn, GoogleSignInAccount, GoogleSignInAuthentication;
+import 'package:googleapis/calendar/v3.dart'
+    show CalendarApi, CalendarListEntry, Event, EventAttendee, Events;
+import 'package:googleapis/youtube/v3.dart';
+import 'package:http/http.dart'
+    show BaseRequest, BaseClient, Response, StreamedResponse;
+import 'package:http/http.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shine/UI/config.dart';
+import 'package:shine/UI/labels.dart';
+import 'package:shine/models/event.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class GoogleHttpClient extends BaseClient {
+  Map<String, String> _headers;
+  Client _client;
+
+  GoogleHttpClient(this._headers, this._client) : super();
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) {
+    request.headers.addAll(_headers);
+    return _client.send(request);
+  }
+
+  @override
+  Future<Response> head(Object url, {Map<String, String> headers}) {
+    headers.addAll(_headers);
+    return _client.head(url, headers: headers);
+  }
+}
+
+class GoogleProvider {
+  GoogleProvider() {
+    _googleSignIn = new GoogleSignIn(scopes: scopes);
+  }
+
+  GoogleSignIn _googleSignIn;
+//  final scopes = [CalendarApi.CalendarScope, YoutubeApi.YoutubeScope];
+  final scopes = [CalendarApi.CalendarEventsReadonlyScope, CalendarApi.CalendarReadonlyScope, YoutubeApi.YoutubeReadonlyScope];
+
+
+  Future<bool> isSignedIn() async {
+    return _googleSignIn.isSignedIn();
+  }
+
+  logout() async {
+    await _googleSignIn.signOut();
+    await FirebaseAuth.instance.signOut();
+    var prefs = await SharedPreferences.getInstance();
+    print("logout: prefs.getString('pushToken'): ${prefs.getString(Config.prefsPushToken)}");
+  }
+
+  currentUser() => _googleSignIn.currentUser;
+
+  useGoogleApi() async {
+
+    bool adminFlag = false;
+    var prefs = await SharedPreferences.getInstance();
+    var wkPushToken = prefs.getString(Config.prefsPushToken);
+    if(wkPushToken == null){
+      FirebaseMessaging().getToken().then((pushToken) async{
+        wkPushToken = pushToken;
+        print("useGoogleApi: $pushToken");
+      });
+    }
+
+    await _googleSignIn.signInSilently();
+    if (_googleSignIn.currentUser == null) {
+      final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+      await _googleSignIn.signOut();
+      GoogleSignInAccount googleUser = await _googleSignIn.signIn();
+      if (googleUser != null) {
+        GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final AuthCredential credential =
+        await GoogleAuthProvider.getCredential(
+            accessToken: googleAuth.accessToken,
+            idToken: googleAuth.idToken);
+
+
+        final FirebaseAuth _auth = FirebaseAuth.instance;
+        final FirebaseUser firebaseUser = (await _auth.signInWithCredential(credential)).user;
+//        final FirebaseUser firebaseUser =
+//        await FirebaseAuth.instance.signInWithCredential(credential);
+        if (firebaseUser != null) {
+          // Check is already sign up
+          final QuerySnapshot result = await Firestore.instance
+              .collection('users')
+              .where('id', isEqualTo: firebaseUser.uid)
+              .getDocuments();
+          final List<DocumentSnapshot> documents = result.documents;
+          var prefs = await SharedPreferences.getInstance();
+          if (documents.length == 0) {
+            // Update data to server if new user
+            Firestore.instance
+                .collection('users')
+                .document(firebaseUser.uid)
+                .setData({
+              'nickname': firebaseUser.displayName,
+              'photoUrl': firebaseUser.photoUrl,
+              'id': firebaseUser.uid,
+              'totalMessages': 0,
+              'createdOn': DateTime.now()
+            });
+            await prefs.setString('id', firebaseUser.uid);
+            await prefs.setString('nickname', firebaseUser.displayName);
+            await prefs.setString('photoUrl', firebaseUser.photoUrl);
+          } else {
+            await Firestore.instance.collection('users').document(firebaseUser.uid).updateData(
+                {'pushToken': wkPushToken,
+                  'updateOn': DateTime.now()});
+            await prefs.setString('id', firebaseUser.uid);
+            await prefs.setString('nickname', documents[0]['nickname']);
+            await prefs.setString('photoUrl', documents[0]['photoUrl']);
+          }
+
+
+          print("Config.chattype: ${Config.chattype}");
+          //create chat group if not exist for chattype=1
+          print("_googleSignIn.currentUser.email: ${_googleSignIn.currentUser.email}");
+          if(Config.chattype==1 ){
+            var user = await Firestore.instance.collection('usermaster').where("email", isEqualTo: _googleSignIn.currentUser.email)
+                .snapshots().first.then((QuerySnapshot snapshot) {
+              snapshot.documents.map((f) => f.data);
+            });
+            print("user: $user");
+            user != null ? print("user['adminflag']: ${user['adminflag']}"): print(user);
+            adminFlag = user != null ? user['adminflag']: false;
+            if(user == null || user.length == 0){
+              if(Strings.chat_admin_email == _googleSignIn.currentUser.email){
+                adminFlag = true;
+              }
+              print("adminFlag: ${adminFlag}");
+              Firestore.instance
+                  .collection('usermaster')
+                  .document(firebaseUser.uid)
+                  .setData({
+                'id': firebaseUser.uid,
+                'email': firebaseUser.email,
+                'adminflag' : adminFlag
+              });
+            }
+            final QuerySnapshot result = await Firestore.instance
+                .collection('1v1chats')
+                .where('id', isEqualTo: firebaseUser.uid)
+                .getDocuments();
+            final List<DocumentSnapshot> documents = result.documents;
+            if (documents.length == 0 && !adminFlag) {
+              // Update data to server if new user
+              Firestore.instance
+                  .collection('1v1chats')
+                  .document(firebaseUser.uid)
+                  .setData({
+                'id': firebaseUser.uid,
+                'createdOn': DateTime.now(),
+                'nickname': firebaseUser.displayName,
+                'email': firebaseUser.email,
+                'latestMsgTimestamp' : DateTime.now().millisecondsSinceEpoch.toString()
+              });
+            }
+          }
+//          await prefs.setString(Config.prefsId, firebaseUser.uid);
+//          await prefs.setString(Config.prefsNickname, firebaseUser.displayName);
+//          await prefs.setString(Config.prefsPhotoUrl, firebaseUser.photoUrl);
+          await prefs.setString(Config.prefsEmail, _googleSignIn.currentUser.email);
+          await prefs.setString(Config.prefsPushToken, wkPushToken);
+          await prefs.setBool(Config.prefsAdminFlag, adminFlag);
+        }
+      }
+    }
+  }
+
+//  Future<List<EventModel>> getAdminEvents(String calendarName) async {
+//    var url = 'https://www.googleapis.com/calendar/v3/calendars/' +
+//        calendarName +
+//        '/events?key=' +
+//        Strings.calendar_key;
+//    List<Event> calEvents = [];
+//    final response = await http.get(url);
+//
+//    if (response.statusCode == 200) {
+//      // If server returns an OK response, parse the JSON
+//      var list = json.decode(response.body)["items"] as List<dynamic>;
+//
+//      list.toList().forEach((e) {
+//        var date = DateTime.parse(e["start"]["dateTime"]);
+//        print(date.timeZoneOffset);
+//        print(date.timeZoneName);
+//        print(e["timeZone"]);
+//      });
+//      return list
+//          .where((e) =>
+//      e["status"] != "cancelled" &&
+//          (e["start"]["dateTime"] != null || e["start"]["date"] != null) &&
+//          (e["end"]["dateTime"] != null || e["end"]["dateTime"] != null))
+//          .map((e) => EventModel.fromAdminJson(e))
+//          .toList();
+//    } else {
+//      // If that response was not OK, throw an error.
+////      throw Exception('Failed to load post');
+//    }
+//
+//    return [];
+//  }
+
+  Future<List<EventModel>> getEvents(String calendarName) async {
+    if (_googleSignIn.currentUser == null) {
+      print('User Null');
+      return [];
+    }
+    final authHeaders = await _googleSignIn.currentUser.authHeaders;
+    final client = new Client();
+    final googleClient = new GoogleHttpClient(authHeaders, client);
+    var calendar = new CalendarApi(googleClient);
+    final now = DateTime.now();
+    final timeMin = DateTime(now.year - 1, 1, 1).toUtc();
+    final timeMax = DateTime(now.year + 1, 13, 0).toUtc();
+    var nextPageToken;
+    List<Event> calEvents = [];
+    do {
+      var res = await calendar.events.list(calendarName,
+          timeMin: timeMin, timeMax: timeMax, pageToken: nextPageToken);
+      nextPageToken = res.nextPageToken;
+      calEvents.addAll(res.items);
+    } while (nextPageToken != null);
+    return calEvents
+        .where((e) =>
+    e.status != "cancelled" &&
+        (e.start.dateTime != null || e.start.date != null) &&
+        (e.end.dateTime != null || e.end.date != null))
+        .toList()
+        .map((e) => EventModel.fromEvent(e, calendarName,
+        self: _googleSignIn.currentUser.email == calendarName))
+        .toList();
+  }
+
+  Future<List<CalendarListEntry>> getCalendars() async {
+    if (_googleSignIn.currentUser == null) {
+      await useGoogleApi();
+      if (_googleSignIn.currentUser == null) {
+        return [];
+      }
+    }
+    final authHeaders = await _googleSignIn.currentUser.authHeaders;
+    final client = new Client();
+    final googleClient = new GoogleHttpClient(authHeaders, client);
+    var calendar = new CalendarApi(googleClient);
+    final calendars = await calendar.calendarList.list();
+    return calendars.items;
+  }
+
+  Future<List<CalendarListEntry>> attend(calendarId, eventId) async {
+    if (_googleSignIn.currentUser == null) {
+      await useGoogleApi();
+    }
+    final authHeaders = await _googleSignIn.currentUser.authHeaders;
+    final client = new Client();
+    final googleClient = new GoogleHttpClient(authHeaders, client);
+    var calendar = new CalendarApi(googleClient);
+    final event = await calendar.events.get(calendarId, eventId);
+    final email = _googleSignIn.currentUser.email;
+    if (event.attendees == null) {
+      event.attendees = new List();
+    }
+    if (event.attendees
+        .firstWhere((e) => e.email == email, orElse: () => null) ==
+        null) {
+      final a = EventAttendee();
+      a.email = email;
+      event.attendees.add(a);
+      await calendar.events.update(event, calendarId, eventId);
+    }
+    return null;
+  }
+
+  Future<List<EventModel>> syncEvents(
+      List<Event> events, String calendarName) async {
+    if (_googleSignIn.currentUser == null) {
+      await useGoogleApi();
+    }
+    final authHeaders = await _googleSignIn.currentUser.authHeaders;
+    final client = new Client();
+    final googleClient = new GoogleHttpClient(authHeaders, client);
+    var calendar = new CalendarApi(googleClient);
+
+    var res = await Future.wait(
+        events.map((e) async => await calendar.events.insert(e, calendarName)));
+    return res
+        .map((e) => EventModel.fromEvent(e, calendarName,
+        self: _googleSignIn.currentUser.email == calendarName))
+        .toList();
+  }
+}

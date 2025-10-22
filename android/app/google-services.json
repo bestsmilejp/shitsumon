@@ -1,0 +1,56 @@
+{
+  "project_info": {
+    "project_number": "710535559049",
+    "firebase_url": "https://shitsumon-app.firebaseio.com",
+    "project_id": "shitsumon-app",
+    "storage_bucket": "shitsumon-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:710535559049:android:0c78ff1cecc13f77079358",
+        "android_client_info": {
+          "package_name": "com.appbestsmile.shitsumon"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "710535559049-lidf84e6bfuggr4vptnggih86vsiuugm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.appbestsmile.shitsumon",
+            "certificate_hash": "db50c006f2cad25ad67c01773bc4e27ccbf72254"
+          }
+        },
+        {
+          "client_id": "710535559049-9rv6um6nasarqqu0lo7khlkcapi1ejik.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.appbestsmile.shitsumon",
+            "certificate_hash": "4d60f49a1b5a46e1d7c7c5100f334b5f1453ac5d"
+          }
+        },
+        {
+          "client_id": "710535559049-635rknebbek9ga9pimno5bb71eg4j86n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbf2hN8-w9SNz8r97tcQLYy4UMM0d3Des"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "710535559049-635rknebbek9ga9pimno5bb71eg4j86n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
