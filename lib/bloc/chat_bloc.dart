@@ -112,31 +112,29 @@ class ChatBloc {
       if (this.chatsSub != null) {
         this.chatsSub!.cancel();
       }
-      if (chatRoomId != null) {
-        var chats = _chats.value;
-        this.chatsSub = getMessagesRef(chatRoomId)
-            .orderBy('timestamp', descending: true)
-            .snapshots()
-            .listen((data) {
-          chats[chatRoomId] = data.docs
-              .map((doc) => ChatModel(
-              id: doc.id,
-              content: doc['content'],
-              likes: (doc.data() as Map) ['likes']??[],
-              idFrom: doc['idFrom'],
-              timestamp: doc['timestamp'],
-              type: doc['type']))
-              .toList();
+      var chats = _chats.value;
+      this.chatsSub = getMessagesRef(chatRoomId)
+          .orderBy('timestamp', descending: true)
+          .snapshots()
+          .listen((data) {
+        chats[chatRoomId] = data.docs
+            .map((doc) => ChatModel(
+            id: doc.id,
+            content: doc['content'],
+            likes: (doc.data() as Map) ['likes']??[],
+            idFrom: doc['idFrom'],
+            timestamp: doc['timestamp'],
+            type: doc['type']))
+            .toList();
 
-          _chats.sink.add(chats);
-          print("ChatBloc - getChat 2 - chats.values.length: ${chats.values.length}");
-          // print("ChatBloc - getChat 2 - chats.values: ${chats.values}");
-        });
+        _chats.sink.add(chats);
+        print("ChatBloc - getChat 2 - chats.values.length: ${chats.values.length}");
+        // print("ChatBloc - getChat 2 - chats.values: ${chats.values}");
+      });
 
-        print("ChatBloc - getChat 3 - _chats.value.length: ${_chats.value.length}");
-        // print("ChatBloc - getChat 3 - _chats.value: ${_chats.value}");
-      }
-    } catch (e) {
+      print("ChatBloc - getChat 3 - _chats.value.length: ${_chats.value.length}");
+      // print("ChatBloc - getChat 3 - _chats.value: ${_chats.value}");
+        } catch (e) {
       AppBloc.getInstance()!.showError(e);
     } finally {
       if (empty) AppBloc.getInstance()!.loading(false);

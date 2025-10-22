@@ -6,15 +6,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 //import 'package:googleapis/calendar/v3.dart'
 //    show CalendarApi, CalendarListEntry, Event, EventAttendee, Events;
 //import 'package:googleapis/youtube/v3.dart';
-import 'package:http/http.dart'
-    show BaseRequest, BaseClient, Response, StreamedResponse;
-import 'package:http/http.dart';
 import 'package:shitsumon/bloc/user_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shitsumon/UI/config.dart';
-import 'package:shitsumon/UI/labels.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 //class GoogleHttpClient extends BaseClient {
 //  Map<String, String> _headers;

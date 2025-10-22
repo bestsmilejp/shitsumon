@@ -1,11 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shitsumon/UI/config.dart';
 import 'package:shitsumon/UI/labels.dart';
 import 'package:shitsumon/UI/size_config.dart';
 import 'package:shitsumon/models/ChatRoom.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:url_launcher/url_launcher.dart' as launcher;
 

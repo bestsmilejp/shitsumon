@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shitsumon/UI/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shitsumon/UI/labels.dart';
 import 'package:shitsumon/bloc/app_bloc.dart';
 import 'package:shitsumon/bloc/chat_bloc.dart';
 import 'package:shitsumon/chat/chat.dart';

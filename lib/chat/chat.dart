@@ -34,7 +34,7 @@ class Chat extends StatelessWidget {
     print("Chat build 1 - this.groupId: ${this.groupId}");
 
     return
-      (this.groupId == null || this.groupId!.isEmpty) && chatRoomName != null ?
+      (this.groupId == null || this.groupId!.isEmpty) ?
       new Scaffold(
         appBar: AppBar(
             title: Text(chatRoomName, style: TextStyle(color: Colors.white)),

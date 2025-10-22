@@ -2,7 +2,6 @@ import 'dart:async';
 
 //import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 //import 'package:flutter_crashlytics/flutter_crashlytics.dart';
 //import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,7 +15,6 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import 'UI/config.dart';
 import 'UI/size_config.dart';
-import 'chat/chat.dart';
 import 'event/event.dart';
 import 'officialhp/officialhp.dart';
 import 'qa/qa.dart';
@@ -54,7 +52,7 @@ class _MyAppMainState extends State<MyAppMain> {
 
   var prefs;
 
-  _MyAppMainState({Key? key, this.currentUserId, this.initScreen, this.newNotificationChat, this.groupId}) {
+  _MyAppMainState({this.currentUserId, this.initScreen, this.newNotificationChat, this.groupId}) {
     print('_MyAppMainState1 - currentUserId      : $currentUserId');
     print('_MyAppMainState1 - initScreen         : $initScreen');
     print('_MyAppMainState1 - newNotificationChat: $newNotificationChat');
@@ -386,8 +384,7 @@ class _MyAppMainState extends State<MyAppMain> {
 WebViewController? controllerGlobal;
 
 class NavigationBackControls extends StatelessWidget {
-  const NavigationBackControls(this._webViewControllerFuture)
-      : assert(_webViewControllerFuture != null);
+  const NavigationBackControls(this._webViewControllerFuture);
 
   final Future<WebViewController> _webViewControllerFuture;
 
@@ -419,8 +416,7 @@ class NavigationBackControls extends StatelessWidget {
   }
 }
 class NavigationControls extends StatelessWidget {
-  const NavigationControls(this._webViewControllerFuture)
-      : assert(_webViewControllerFuture != null);
+  const NavigationControls(this._webViewControllerFuture);
 
   final Future<WebViewController> _webViewControllerFuture;
 
